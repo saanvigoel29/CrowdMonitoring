@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Crowd Monitoring Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js">
+  async function fetchData() {
+  const response = await fetch('/data');
+  const data = await response.json();
+  console.log("Fetched data:", data);  
+  chart.data.labels = data.timestamps;
+  chart.data.datasets[0].data = data.counts;
+  chart.update();
+}</script>
+  <style>
+    body { background:#fafafa; font-family:Arial; text-align:center; }
+    canvas { margin-top:30px; }
+  </style>
+</head>
+<body>
+  <h2>Real-Time Crowd Monitoring Dashboard</h2>
+  <canvas id="chart" width="900" height="400"></canvas>
+
+  <script>
+    const ctx = document.getElementById('chart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'People Count',
+          data: [],
+          borderColor: 'blue',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.2
+        }]
+      },
+      options: {
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: 'People Count' }},
+          x: { title: { display: true, text: 'Time' }}
+        }
+      }
+    });
+
+    async function fetchData() {
+      const response = await fetch('/data');
+      const data = await response.json();
+      chart.data.labels = data.timestamps;
+      chart.data.datasets[0].data = data.counts;
+      chart.update();
+    }
+    setInterval(fetchData, 3000);
+    fetchData();
+  </script>
+</body>
+</html>

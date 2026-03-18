@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Real-Time Crowd Monitoring</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      background: #f5f5f5;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    h2 {
+      background: #222;
+      color: #fff;
+      padding: 15px 0;
+      margin: 0;
+    }
+    #status {
+      font-size: 20px;
+      margin: 15px;
+      font-weight: bold;
+    }
+    #video-box {
+      display: inline-block;
+      background: #000;
+      padding: 10px;
+      border-radius: 10px;
+    }
+    img {
+      border: 3px solid #ccc;
+      border-radius: 10px;
+      width: 720px;
+      height: auto;
+    }
+    #chart-container {
+      width: 85%;
+      margin: 40px auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2> Real-Time Crowd Monitoring & Management</h2>
+
+  <div id="status">Loading status...</div>
+
+  <div id="video-box">
+    <img src="{{ url_for('video_feed') }}">
+  </div>
+
+  <audio id="alertSound" src="{{ url_for('static', filename='alert_beep.mp3') }}"></audio>
+
+  <div id="chart-container">
+    <h3> Live People Count Graph</h3>
+    <canvas id="chart" width="900" height="400"></canvas>
+  </div>
+
+  <script>
+    const statusDiv = document.getElementById('status');
+    const alertSound = document.getElementById('alertSound');
+    const ctx = document.getElementById('chart').getContext('2d');
+
+    
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'People Count',
+          data: [],
+          borderColor: 'blue',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.2
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: 'People Count' }},
+          x: { title: { display: true, text: 'Time' }}
+        }
+      }
+    });
+
+    
+    async function fetchStatus() {
+      const res = await fetch('/status');
+      const data = await res.json();
+      const color = data.crowd_level === "Low" ? "green" :
+                    data.crowd_level === "Medium" ? "orange" : "red";
+      statusDiv.innerHTML = `People: ${data.people} | Crowd: <span style="color:${color}">${data.crowd_level}</span>`;
+      if (data.crowd_level === "High") {
+        alertSound.play();
+      }
+    }
+
+   
+    async function fetchData() {
+      const response = await fetch('/data');
+      const data = await response.json();
+      chart.data.labels = data.timestamps;
+      chart.data.datasets[0].data = data.counts;
+      chart.update();
+    }
+
+    
+    setInterval(fetchStatus, 2000);
+    setInterval(fetchData, 3000);
+    fetchStatus();
+    fetchData();
+  </script>
+</body>
+</html>
